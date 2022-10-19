@@ -73,6 +73,10 @@
     },
     {
       "moduleName": "org.antlr:ST4"
+    },
+    {
+      "moduleLicense": "Prior BSD License",
+      "moduleName": "com.brsanthu:migbase64"
     }
   ],
   "overrideLicenses": [
