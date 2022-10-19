@@ -25,15 +25,19 @@ import com.fortanix.sdkms.v1.model.KeyObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-
 public class FortanixDSM {
 
   private static final Logger LOG = LogManager.getLogger();
   private String bearerToken;
   private final ApiClient client;
 
-  private FortanixDSM(String server, String apiKey, Boolean debug, Boolean debug_tls) throws ApiException {
+  public static FortanixDSM createWithApiKeyCredential(
+      String server, String apiKey, Boolean debug, Boolean debug_tls) throws ApiException {
+    return new FortanixDSM(server, apiKey, debug, debug_tls);
+  }
+
+  private FortanixDSM(String server, String apiKey, Boolean debug, Boolean debug_tls)
+      throws ApiException {
     client = new ApiClient();
     // Set the name of the server to talk to.
     client.setBasePath(server);
@@ -112,10 +116,10 @@ public class FortanixDSM {
       Optional<byte[]> secret = crypto.fetchSecret(keyId);
       System.out.println(secret);
       crypto.logout();
-    } catch (ApiException  e) {
+    } catch (ApiException e) {
       LOG.error(e);
     } catch (Exception e) {
       LOG.error(e);
-    } 
+    }
   }
 }

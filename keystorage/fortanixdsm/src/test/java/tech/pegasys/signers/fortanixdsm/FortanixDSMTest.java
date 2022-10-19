@@ -12,11 +12,32 @@
  */
 package tech.pegasys.signers.fortanixdsm;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static tech.pegasys.signers.fortanixdsm.FortanixDSM.createWithApiKeyCredential;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import com.fortanix.sdkms.v1.ApiException;
+
 public class FortanixDSMTest {
-  // @Test
-  // void checkHelloWorld() {
-  //   final Optional<String> recvString = FortanixDSM.helloWorld();
-  //   System.out.println(recvString.get());
-  //   assertThat(recvString).isNotEmpty().get().isEqualTo("HelloWorld");
-  // }
+  private static final String SERVER = System.getenv("DSM_SERVER");
+  private static final String API_KEY = System.getenv("API_KEY");
+  private static final String KEY_ID = System.getenv("KEY_ID");
+
+  @BeforeAll
+  public static void setup() {
+    Assumptions.assumeTrue(SERVER != null, "Set DSM_SERVER environment variable");
+    Assumptions.assumeTrue(API_KEY != null, "Set API_KEY environment variable");
+    Assumptions.assumeTrue(KEY_ID != null, "Set KEY_ID environment variable");
+  }
+
+  @Test
+  void connectingWithInvalidCredentialThrowsException() {
+    assertThat(SERVER).isEqualTo("world");
+    assertThatExceptionOfType(ApiException.class)
+        .isThrownBy(() -> createWithApiKeyCredential(SERVER, API_KEY, true, true));
+  }
 }
