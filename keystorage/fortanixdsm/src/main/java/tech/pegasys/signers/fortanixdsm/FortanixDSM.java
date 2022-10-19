@@ -25,14 +25,7 @@ import com.fortanix.sdkms.v1.model.KeyObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-// API library imports.
-// import com.fortanix.sdkms.v1.api.EncryptionAndDecryptionApi;
-// import com.fortanix.sdkms.v1.api.SecurityObjectsApi;
-// import com.fortanix.sdkms.v1.model.DecryptRequest;
-// import com.fortanix.sdkms.v1.model.DecryptResponse;
-// import com.fortanix.sdkms.v1.model.EncryptRequest;
-// import com.fortanix.sdkms.v1.model.EncryptResponse;
-// import com.fortanix.sdkms.v1.model.ObjectType;
+
 
 public class FortanixDSM {
 
