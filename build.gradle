@@ -96,6 +96,10 @@ allprojects {
   apply plugin: 'distribution'
   apply plugin: 'org.owasp.dependencycheck'
   apply from: "${rootDir}/gradle/versions.gradle"
+  apply plugin: 'maven'
+    
+  group = 'com.github.shreyasg197'
+
 
   version = rootProject.version
 
