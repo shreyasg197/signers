@@ -38,21 +38,12 @@ public class FortanixDSM implements Closeable {
   private String bearerToken;
   private ApiClient client;
   private SecurityObjectsApi securityObject;
-  private Boolean isInit ;
 
   public static FortanixDSM createWithApiKeyCredential(
       final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
-        FortanixDSM fortanixDsm = new FortanixDSM();
-        fortanixDsm.setup(server, apiKey, debug, debug_tls);
-    return fortanixDsm.setup();
+    return new FortanixDSM(server, apiKey, debug, debug_tls);
   }
-  private FortanixDSM(){
-    isInit = false;
-    bearerToken = null;
-    client = null;
-    securityObject = null;
-  }
-  private void setup(
+  private FortanixDSM(
       final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
     client = new ApiClient();
     client.setBasePath(server);
@@ -130,7 +121,6 @@ public class FortanixDSM implements Closeable {
     boolean debug = false;
     boolean debug_tls = false;
     String keyId = "da589b59-986a-4b82-9b98-084d4727487e";
-    FortanixDSM throwAway = new FortanixDSM();
     try {
       FortanixDSM crypto = createWithApiKeyCredential(server, apiKey, debug, debug_tls);
       Collection<SimpleEntry<String, Bytes>> entries = crypto.mapSecret(keyId, SimpleEntry::new);
