@@ -96,9 +96,7 @@ allprojects {
   apply plugin: 'distribution'
   apply plugin: 'org.owasp.dependencycheck'
   apply from: "${rootDir}/gradle/versions.gradle"
-  apply plugin: 'maven-publish'
-    
-  group = 'com.github.shreyasg197'
+
 
 
   version = rootProject.version
@@ -403,7 +401,7 @@ subprojects {
   }
 }
 
-jar { enabled = false }
+jar { enabled = true }
 
 configurations {
   installedJars { transitive = false }

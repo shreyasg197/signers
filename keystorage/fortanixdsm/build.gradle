@@ -33,6 +33,7 @@ testFixturesJar {
 dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'com.fortanix:sdkms-client:4.11.2116'
+  implementation 'org.apache.tuweni:tuweni-bytes'
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
   runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 

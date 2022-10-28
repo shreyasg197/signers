@@ -12,6 +12,7 @@
  */
 package tech.pegasys.signers.fortanixdsm;
 
+import java.io.Closeable;
 import java.util.Optional;
 
 import com.fortanix.sdkms.v1.ApiClient;
@@ -24,20 +25,22 @@ import com.fortanix.sdkms.v1.model.AuthResponse;
 import com.fortanix.sdkms.v1.model.KeyObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 
-public class FortanixDSM {
+public class FortanixDSM implements Closeable {
 
   private static final Logger LOG = LogManager.getLogger();
   private String bearerToken;
-  private final ApiClient client;
+  private ApiClient client;
 
   public static FortanixDSM createWithApiKeyCredential(
-      String server, String apiKey, Boolean debug, Boolean debug_tls) throws ApiException {
-    return new FortanixDSM(server, apiKey, debug, debug_tls);
+      FortanixDSM fortanixDsm, String server, String apiKey, Boolean debug, Boolean debug_tls) {
+    // FortanixDSM fortanixDsm = new FortanixDSM();
+    fortanixDsm.setup(server, apiKey, debug, debug_tls);
+    return fortanixDsm;
   }
 
-  private FortanixDSM(String server, String apiKey, Boolean debug, Boolean debug_tls)
-      throws ApiException {
+  public void setup(String server, String apiKey, Boolean debug, Boolean debug_tls) {
     client = new ApiClient();
     // Set the name of the server to talk to.
     client.setBasePath(server);
@@ -68,8 +71,13 @@ public class FortanixDSM {
     client.setBasicAuthString(apiKey);
 
     // Acquire a bearer token to use for other APIs.
-    AuthResponse response = new AuthenticationApi().authorize();
-    bearerToken = response.getAccessToken();
+    AuthResponse response;
+    try {
+      response = new AuthenticationApi().authorize();
+      bearerToken = response.getAccessToken();
+    } catch (ApiException e) {
+      LOG.error(e);
+    }
     if (debug) {
       LOG.info("Received Bearer token %s\n", bearerToken);
     }
@@ -80,10 +88,10 @@ public class FortanixDSM {
     bearerAuth.setApiKeyPrefix("Bearer");
   }
 
-  public Optional<byte[]> fetchSecret(final String secretName) {
+  public Optional<Bytes> fetchSecret(final String secretName) {
     try {
       KeyObject secret = new SecurityObjectsApi().getSecurityObjectValue(secretName);
-      return Optional.of(secret.getValue());
+      return Optional.of(Bytes.wrap(secret.getValue()));
     } catch (final ApiException e) {
       return Optional.empty();
     }
@@ -110,16 +118,19 @@ public class FortanixDSM {
     boolean debug = false;
     boolean debug_tls = false;
     String keyId = "da589b59-986a-4b82-9b98-084d4727487e";
-    FortanixDSM crypto;
+    FortanixDSM crypto = new FortanixDSM();
     try {
-      crypto = new FortanixDSM(server, apiKey, debug, debug_tls);
-      Optional<byte[]> secret = crypto.fetchSecret(keyId);
-      System.out.println(secret);
+      createWithApiKeyCredential(crypto, server, apiKey, debug, debug_tls);
+      Optional<Bytes> secret = crypto.fetchSecret(keyId);
+      System.out.println(secret.get());
       crypto.logout();
-    } catch (ApiException e) {
-      LOG.error(e);
     } catch (Exception e) {
       LOG.error(e);
     }
+  }
+
+  @Override
+  public void close() {
+    logout();
   }
 }

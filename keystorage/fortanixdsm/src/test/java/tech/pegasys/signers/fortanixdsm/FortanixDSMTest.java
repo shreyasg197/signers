@@ -12,15 +12,14 @@
  */
 package tech.pegasys.signers.fortanixdsm;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.signers.fortanixdsm.FortanixDSM.createWithApiKeyCredential;
 
+import com.fortanix.sdkms.v1.ApiException;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import com.fortanix.sdkms.v1.ApiException;
 
 public class FortanixDSMTest {
   private static final String SERVER = System.getenv("DSM_SERVER");
@@ -36,8 +35,9 @@ public class FortanixDSMTest {
 
   @Test
   void connectingWithInvalidCredentialThrowsException() {
-    assertThat(SERVER).isEqualTo("world");
+    assertEquals(SERVER, "world");
+    FortanixDSM fortanixDsm = new FortanixDSM();
     assertThatExceptionOfType(ApiException.class)
-        .isThrownBy(() -> createWithApiKeyCredential(SERVER, API_KEY, true, true));
+        .isThrownBy(() -> createWithApiKeyCredential(fortanixDsm, SERVER, API_KEY, true, true));
   }
 }
