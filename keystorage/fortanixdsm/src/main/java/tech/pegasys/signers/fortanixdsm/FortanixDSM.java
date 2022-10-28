@@ -43,6 +43,7 @@ public class FortanixDSM implements Closeable {
       final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
     return new FortanixDSM(server, apiKey, debug, debug_tls);
   }
+
   private FortanixDSM(
       final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
     client = new ApiClient();
