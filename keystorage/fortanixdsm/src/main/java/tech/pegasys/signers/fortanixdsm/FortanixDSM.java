@@ -13,7 +13,12 @@
 package tech.pegasys.signers.fortanixdsm;
 
 import java.io.Closeable;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 import com.fortanix.sdkms.v1.ApiClient;
 import com.fortanix.sdkms.v1.ApiException;
@@ -32,45 +37,31 @@ public class FortanixDSM implements Closeable {
   private static final Logger LOG = LogManager.getLogger();
   private String bearerToken;
   private ApiClient client;
+  private SecurityObjectsApi securityObject;
+  private Boolean isInit ;
 
   public static FortanixDSM createWithApiKeyCredential(
-      FortanixDSM fortanixDsm, String server, String apiKey, Boolean debug, Boolean debug_tls) {
-    // FortanixDSM fortanixDsm = new FortanixDSM();
-    fortanixDsm.setup(server, apiKey, debug, debug_tls);
-    return fortanixDsm;
+      final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
+        FortanixDSM fortanixDsm = new FortanixDSM();
+        fortanixDsm.setup(server, apiKey, debug, debug_tls);
+    return fortanixDsm.setup();
   }
-
-  public void setup(String server, String apiKey, Boolean debug, Boolean debug_tls) {
+  private FortanixDSM(){
+    isInit = false;
+    bearerToken = null;
+    client = null;
+    securityObject = null;
+  }
+  private void setup(
+      final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
     client = new ApiClient();
-    // Set the name of the server to talk to.
     client.setBasePath(server);
-
-    // This optionally enables verbose logging in the API library.
     client.setDebugging(debug);
-
-    // The default ApiClient (and its configured authorization) will be
-    // used for constructing the specific API objects, such as
-    // EncryptionAndDecryptionApi and SecurityObjectsApi.
     Configuration.setDefaultApiClient(client);
-
-    // If you need a trust store for the server's certificate, you can
-    // configure it here or via -Djavax.net.ssl.trustStore= on the
-    // java command line.
-    // if (truststore != null) {
-    //   System.setProperty("javax.net.ssl.trustStore", truststore);
-    // }
-
-    // This optionally enables very verbose logging in the Java network
-    // libraries.
     if (debug_tls) {
       System.setProperty("javax.net.debug", "all");
     }
-
-    // When authenticating as an application, the API Key functions as
-    // the entire HTTP basic auth token.
     client.setBasicAuthString(apiKey);
-
-    // Acquire a bearer token to use for other APIs.
     AuthResponse response;
     try {
       response = new AuthenticationApi().authorize();
@@ -81,27 +72,48 @@ public class FortanixDSM implements Closeable {
     if (debug) {
       LOG.info("Received Bearer token %s\n", bearerToken);
     }
-
-    // Configure the client library to use the bearer token.
     ApiKeyAuth bearerAuth = (ApiKeyAuth) client.getAuthentication("bearerToken");
     bearerAuth.setApiKey(bearerToken);
     bearerAuth.setApiKeyPrefix("Bearer");
+    securityObject = new SecurityObjectsApi();
   }
 
   public Optional<Bytes> fetchSecret(final String secretName) {
     try {
-      KeyObject secret = new SecurityObjectsApi().getSecurityObjectValue(secretName);
+      KeyObject secret = securityObject.getSecurityObjectValue(secretName);
       return Optional.of(Bytes.wrap(secret.getValue()));
     } catch (final ApiException e) {
       return Optional.empty();
     }
   }
 
+  public Optional<String> fetchName(final String secretName) {
+    try {
+      KeyObject secret = securityObject.getSecurityObjectValue(secretName);
+      return Optional.of(secret.getName());
+    } catch (final ApiException e) {
+      return Optional.empty();
+    }
+  }
+
+  public <R> Collection<R> mapSecret(
+      final String secretName, final BiFunction<String, Bytes, R> mapper) {
+    final Set<R> result = ConcurrentHashMap.newKeySet();
+    try {
+      final Optional<String> name = fetchName(secretName);
+      final Optional<Bytes> value = fetchSecret(secretName);
+      if (name.isPresent() && value.isPresent()) {
+        final R object = mapper.apply(name.get(), Bytes.wrap(fetchSecret(secretName).get()));
+        result.add(object);
+      }
+    } catch (final Exception e) {
+      LOG.warn("Failed to map secret '{}' to requested object type.", secretName);
+    }
+    return result;
+  }
+
   public void logout() {
     if (bearerToken != null) {
-      // It is a good idea to terminate the session when you are done
-      // using it. This minimizes the window of time in which an attacker
-      // could steal your bearer token and use it.
       try {
         new AuthenticationApi().terminate();
       } catch (final ApiException e) {
@@ -118,9 +130,12 @@ public class FortanixDSM implements Closeable {
     boolean debug = false;
     boolean debug_tls = false;
     String keyId = "da589b59-986a-4b82-9b98-084d4727487e";
-    FortanixDSM crypto = new FortanixDSM();
+    FortanixDSM throwAway = new FortanixDSM();
     try {
-      createWithApiKeyCredential(crypto, server, apiKey, debug, debug_tls);
+      FortanixDSM crypto = createWithApiKeyCredential(server, apiKey, debug, debug_tls);
+      Collection<SimpleEntry<String, Bytes>> entries = crypto.mapSecret(keyId, SimpleEntry::new);
+
+      System.out.println(entries);
       Optional<Bytes> secret = crypto.fetchSecret(keyId);
       System.out.println(secret.get());
       crypto.logout();

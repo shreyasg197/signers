@@ -14,7 +14,6 @@ package tech.pegasys.signers.fortanixdsm;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.signers.fortanixdsm.FortanixDSM.createWithApiKeyCredential;
 
 import com.fortanix.sdkms.v1.ApiException;
 import org.junit.jupiter.api.Assumptions;
@@ -36,8 +35,7 @@ public class FortanixDSMTest {
   @Test
   void connectingWithInvalidCredentialThrowsException() {
     assertEquals(SERVER, "world");
-    FortanixDSM fortanixDsm = new FortanixDSM();
     assertThatExceptionOfType(ApiException.class)
-        .isThrownBy(() -> createWithApiKeyCredential(fortanixDsm, SERVER, API_KEY, true, true));
+        .isThrownBy(() -> FortanixDSM.createWithApiKeyCredential(SERVER, API_KEY, true, true));
   }
 }
