@@ -13,14 +13,11 @@
 package tech.pegasys.signers.fortanixdsm;
 
 import java.io.Closeable;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
-
-import javax.management.RuntimeErrorException;
 
 import com.fortanix.sdkms.v1.ApiClient;
 import com.fortanix.sdkms.v1.ApiException;
@@ -41,31 +38,22 @@ public class FortanixDSM implements Closeable {
   private ApiClient client;
   private SecurityObjectsApi securityObject;
 
-  public static FortanixDSM createWithApiKeyCredential(
-      final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) {
-      try {
-        return new FortanixDSM(server, apiKey, debug, debug_tls);
-      } catch (ApiException e) {
-        throw new RuntimeException(e);
-      }
+  public static FortanixDSM createWithApiKeyCredential(final String server, final String apiKey) {
+    try {
+      return new FortanixDSM(server, apiKey);
+    } catch (ApiException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  private FortanixDSM(
-      final String server, final String apiKey, final Boolean debug, final Boolean debug_tls) throws ApiException  {
+  private FortanixDSM(final String server, final String apiKey) throws ApiException {
     client = new ApiClient();
     client.setBasePath(server);
-    client.setDebugging(debug);
     Configuration.setDefaultApiClient(client);
-    if (debug_tls) {
-      System.setProperty("javax.net.debug", "all");
-    }
     client.setBasicAuthString(apiKey);
     AuthResponse response;
     response = new AuthenticationApi().authorize();
     bearerToken = response.getAccessToken();
-    if (debug) {
-      LOG.info("Received Bearer token %s\n", bearerToken);
-    }
     ApiKeyAuth bearerAuth = (ApiKeyAuth) client.getAuthentication("bearerToken");
     bearerAuth.setApiKey(bearerToken);
     bearerAuth.setApiKeyPrefix("Bearer");
@@ -115,21 +103,6 @@ public class FortanixDSM implements Closeable {
       }
       bearerToken = null;
     }
-  }
-
-  public static void main(String[] args) {
-    String server = "https://apps.sdkm.fortanix.com";
-    String apiKey =
-        "OTA5NzMxZjAtYzliNy00NTg5LWI0MTEtYjhiZjlhZjExNmQ2OmN0NEM0bVExQjFTZUlfYlcyNVk4X3FnaURnd0JMN2lVUkROOFowUGVzX1BQN3BFSVVjX1lKZ3RJTGMwcWZtdUxLNTFSdlVMVUNKeGhCR1ZSdjN4ek13";
-    boolean debug = false;
-    boolean debug_tls = false;
-    String keyId = "da589b59-986a-4b82-9b98-084d4727487e";
-    FortanixDSM crypto = createWithApiKeyCredential(server, apiKey, debug, debug_tls);
-    Collection<SimpleEntry<String, Bytes>> entries = crypto.mapSecret(keyId, SimpleEntry::new);
-    System.out.println(entries);
-    Optional<Bytes> secret = crypto.fetchSecret(keyId);
-    System.out.println(secret.get());
-    crypto.logout();
   }
 
   @Override
